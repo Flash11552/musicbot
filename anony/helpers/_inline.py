@@ -148,7 +148,8 @@ class Inline:
                 self.ikb(text=lang["channel"], url=config.SUPPORT_CHANNEL),
             ],
         ]
-        else:
+
+        if not private:
             rows += [[self.ikb(text=lang["language"], callback_data="language")]]
         return self.ikm(rows)
 
