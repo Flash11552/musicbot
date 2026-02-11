@@ -19,13 +19,16 @@ def admin_check(func):
             else:
                 return await update.answer(text, show_alert=True)
 
-        chat_id = (
-            update.chat.id
+        chat = (
+            update.chat
             if isinstance(update, types.Message)
-            else update.message.chat.id
+            else update.message.chat
         )
+        if chat.type == enums.ChatType.PRIVATE:
+            return await func(_, update, *args, **kwargs)
+
         user_id = update.from_user.id
-        admins = await db.get_admins(chat_id)
+        admins = await db.get_admins(chat.id)
 
         if user_id in app.sudoers:
             return await func(_, update, *args, **kwargs)
@@ -75,7 +78,7 @@ async def is_admin(chat_id: int, user_id: int) -> bool:
             enums.ChatMemberStatus.ADMINISTRATOR,
             enums.ChatMemberStatus.OWNER,
         ]
-    except:
+    except Exception:
         raise StopPropagation
 
 
@@ -89,5 +92,5 @@ async def reload_admins(chat_id: int) -> list[int]:
             if not admin.user.is_bot
         ]
         return [admin.user.id for admin in admins]
-    except:
+    except Exception:
         return []
