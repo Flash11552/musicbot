@@ -35,6 +35,7 @@ class Inline:
             )
 
         if not remove:
+            # Pult düymələri
             keyboard.append(
                 [
                     self.ikb(text="▷", callback_data=f"controls resume {chat_id}"),
@@ -42,6 +43,13 @@ class Inline:
                     self.ikb(text="⥁", callback_data=f"controls replay {chat_id}"),
                     self.ikb(text="‣‣I", callback_data=f"controls skip {chat_id}"),
                     self.ikb(text="▢", callback_data=f"controls stop {chat_id}"),
+                ]
+            )
+            
+            # m.
+            keyboard.append(
+                [
+                    self.ikb(text="Bağla🗑️ ", callback_data="close_msg")
                 ]
             )
         return self.ikm(keyboard)
@@ -88,9 +96,13 @@ class Inline:
         return self.ikm(
             [
                 [
+                    # (İndi səsləndir)
                     self.ikb(
                         text=_text, callback_data=f"controls force {chat_id} {item_id}"
-                    )
+                    ),
+                    # (Zibil qutusu)
+                    # m
+                    self.ikb(text="Bağla🗑️", callback_data="close_msg")
                 ]
             ]
         )
@@ -148,16 +160,8 @@ class Inline:
                 self.ikb(text=lang["channel"], url=config.SUPPORT_CHANNEL),
             ],
         ]
-        if private:
-            rows += [
-                [
-                    self.ikb(
-                        text=lang["source"],
-                        url="https://github.com/AnonymousX1025/AnonXMusic",
-                    )
-                ]
-            ]
-        else:
+
+        if not private:
             rows += [[self.ikb(text=lang["language"], callback_data="language")]]
         return self.ikm(rows)
 
@@ -169,4 +173,4 @@ class Inline:
                     self.ikb(text="Youtube", url=link),
                 ],
             ]
-        )
+                    )
