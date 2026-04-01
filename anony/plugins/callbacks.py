@@ -5,7 +5,7 @@
 
 import re
 
-from pyrogram import errors, filters, types
+from pyrogram import filters, types
 
 from anony import anon, app, db, lang, queue, tg, yt
 from anony.helpers import admin_check, buttons, can_manage_vc
@@ -28,14 +28,7 @@ async def _controls(_, query: types.CallbackQuery):
     user = query.from_user.mention
 
     if not await db.get_call(chat_id):
-        try:
-            return await query.answer(query.lang["not_playing"], show_alert=True)
-        except errors.QueryIdInvalid:
-            try:
-                await query.message.delete()
-            except Exception:
-                pass
-            return
+        return await query.answer(query.lang["not_playing"], show_alert=True)
 
     if action == "status":
         return await query.answer()
@@ -81,7 +74,7 @@ async def _controls(_, query: types.CallbackQuery):
                 chat_id=chat_id, message_ids=[m_id, media.message_id], revoke=True
             )
             media.message_id = None
-        except Exception:
+        except:
             pass
 
         msg = await app.send_message(chat_id=chat_id, text=query.lang["play_next"])
@@ -119,7 +112,19 @@ async def _controls(_, query: types.CallbackQuery):
         await query.edit_message_text(
             f"{mtext}\n\n<blockquote>{reply}</blockquote>", reply_markup=keyboard
         )
-    except Exception:
+    except:
+        pass
+
+
+@app.on_callback_query(filters.regex("close_msg") & ~app.bl_users)
+async def close_msg_handler(_, query: types.CallbackQuery):
+    try:
+        chat_id = query.message.chat.id
+        await query.message.delete()
+        
+        if query.message.reply_to_message:
+            await query.message.reply_to_message.delete()
+    except:
         pass
 
 
@@ -127,23 +132,29 @@ async def _controls(_, query: types.CallbackQuery):
 @lang.language()
 async def _help(_, query: types.CallbackQuery):
     data = query.data.split()
+
     if len(data) == 1:
         return await query.answer(url=f"https://t.me/{app.username}?start=help")
 
     if data[1] == "back":
         return await query.edit_message_text(
-            text=query.lang["help_menu"], reply_markup=buttons.help_markup(query.lang)
+            text=query.lang.get("help_menu", "‎"),
+            reply_markup=buttons.help_markup(query.lang)
         )
+
     elif data[1] == "close":
         try:
             await query.message.delete()
             return await query.message.reply_to_message.delete()
-        except Exception:
+        except:
             return
 
-    await query.edit_message_text(
-        text=query.lang[f"help_{data[1]}"],
-        reply_markup=buttons.help_markup(query.lang, True),
+    key = f"help_{data[1]}"
+    text = query.lang[key] if key in query.lang else "‎"
+
+    return await query.edit_message_text(
+        text=text,
+        reply_markup=buttons.help_markup(query.lang, True)
     )
 
 
