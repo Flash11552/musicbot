@@ -28,7 +28,14 @@ async def _controls(_, query: types.CallbackQuery):
     user = query.from_user.mention
 
     if not await db.get_call(chat_id):
-        return await query.answer(query.lang["not_playing"], show_alert=True)
+        try:
+            return await query.answer(query.lang["not_playing"], show_alert=True)
+        except errors.QueryIdInvalid:
+            try:
+                await query.message.delete()
+            except Exception:
+                pass
+            return
 
     if action == "status":
         return await query.answer()
