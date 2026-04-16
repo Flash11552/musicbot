@@ -62,9 +62,16 @@ def can_manage_vc(func):
             return await func(_, update, *args, **kwargs)
 
         if isinstance(update, types.Message):
-            return await update.reply_text(update.lang["user_no_perms"])
+            try:
+                return await update.reply_text(update.lang["user_no_perms"])
+            except Exception:
+                pass
         else:
-            return await update.answer(update.lang["user_no_perms"], show_alert=True)
+            try:
+                return await update.answer(update.lang["user_no_perms"], show_alert=True)
+            except Exception:
+                # Bura QueryIdInvalid və digər callback xətalarını tutur
+                pass
 
     return wrapper
 
