@@ -101,7 +101,7 @@ class TgCall(PyTgCalls):
                     else:
                         await message.edit_text(text, reply_markup=keyboard)
                 # T
-                except exceptions.FloodWait as e:
+                except FloodWait as e:
                     await asyncio.sleep(e.value + 1)
                 # D
                 except (ChatSendMediaForbidden, ChatSendPhotosForbidden, MessageIdInvalid):
