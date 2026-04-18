@@ -80,73 +80,91 @@ class TgCall(PyTgCalls):
                 stream=stream,
                 config=types.GroupCallConfig(auto_start=False),
             )
-        except (GroupcallInvalid, NoActiveGroupCall):
-            return await message.edit_text(
-                "❌ **Səsli çat tapılmadı!**\n\nZəhmət olmasa qrupda səsli çatı başladın və yenidən yoxlayın."
-            )
-        except Exception as e:
-            return await message.edit_text(f"❌ **Səsli çata qoşulma xətası:** {e}")
-
-        # x
-        if not seek_time:
-            media.time = 1
-            await db.add_call(chat_id)
-            text = _lang["play_media"].format(
-                media.url,
-                media.title,
-                media.duration,
-                media.user,
-            )
-            keyboard = buttons.controls(chat_id)
-            try:
-                if _thumb:
-                    await message.edit_media(
-                        media=InputMediaPhoto(
-                            media=_thumb,
-                            caption=text,
-                        ),
-                        reply_markup=keyboard,
-                    )
-                else:
-                    await message.edit_text(text, reply_markup=keyboard)
-            except FloodWait as e:
-                await asyncio.sleep(e.value + 1)
-            except (ChatSendMediaForbidden, ChatSendPhotosForbidden, MessageIdInvalid):
+            
+            if not seek_time:
+                media.time = 1
+                await db.add_call(chat_id)
+                text = _lang["play_media"].format(
+                    media.url,
+                    media.title,
+                    media.duration,
+                    media.user,
+                )
+                keyboard = buttons.controls(chat_id)
                 try:
                     if _thumb:
-                        sent = await app.send_photo(
-                            chat_id=chat_id,
-                            photo=_thumb,
-                            caption=text,
+                        await message.edit_media(
+                            media=InputMediaPhoto(
+                                media=_thumb,
+                                caption=text,
+                            ),
                             reply_markup=keyboard,
                         )
                     else:
-                        sent = await app.send_message(
-                            chat_id=chat_id,
-                            text=text,
-                            reply_markup=keyboard,
-                        )
-                    media.message_id = sent.id
+                        await message.edit_text(text, reply_markup=keyboard)
+                except FloodWait as e:
+                    await asyncio.sleep(e.value + 1)
+                except (ChatSendMediaForbidden, ChatSendPhotosForbidden, MessageIdInvalid):
+                    try:
+                        if _thumb:
+                            sent = await app.send_photo(
+                                chat_id=chat_id,
+                                photo=_thumb,
+                                caption=text,
+                                reply_markup=keyboard,
+                            )
+                        else:
+                            sent = await app.send_message(
+                                chat_id=chat_id,
+                                text=text,
+                                reply_markup=keyboard,
+                            )
+                        media.message_id = sent.id
+                    except Exception:
+                        pass
                 except Exception:
                     pass
+
+        except (GroupcallInvalid, NoActiveGroupCall, exceptions.NoActiveGroupCall):
+            await self.stop(chat_id)
+            try:
+                await message.edit_text(_lang["error_no_call"])
             except Exception:
                 pass
-                  
+                
         except FileNotFoundError:
-            await message.edit_text(_lang["error_no_file"].format(config.SUPPORT_CHAT))
+            try:
+                await message.edit_text(_lang["error_no_file"].format(config.SUPPORT_CHAT))
+            except Exception:
+                pass
             await self.play_next(chat_id)
-        except exceptions.NoActiveGroupCall:
-            await self.stop(chat_id)
-            await message.edit_text(_lang["error_no_call"])
+            
         except exceptions.NoAudioSourceFound:
-            await message.edit_text(_lang["error_no_audio"])
+            try:
+                await message.edit_text(_lang["error_no_audio"])
+            except Exception:
+                pass
             await self.play_next(chat_id)
+            
         except (ConnectionError, ConnectionNotFound, TelegramServerError):
             await self.stop(chat_id)
-            await message.edit_text(_lang["error_tg_server"])
+            try:
+                await message.edit_text(_lang["error_tg_server"])
+            except Exception:
+                pass
+                
         except RTMPStreamingUnsupported:
             await self.stop(chat_id)
-            await message.edit_text(_lang["error_rtmp"])
+            try:
+                await message.edit_text(_lang["error_rtmp"])
+            except Exception:
+                pass
+
+        except Exception as e:
+            try:
+                await message.edit_text(f"❌ **Gözlənilməz Xəta:** {e}")
+            except Exception:
+                pass
 
 
     async def replay(self, chat_id: int) -> None:
