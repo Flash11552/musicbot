@@ -10,6 +10,7 @@ from pyrogram.errors import (ChatSendMediaForbidden, ChatSendPhotosForbidden,
 from pyrogram.types import InputMediaPhoto, Message
 from pytgcalls import PyTgCalls, exceptions, types
 from pytgcalls.pytgcalls_session import PyTgCallsSession
+from pytgcalls.exceptions import GroupcallInvalid, NoActiveGroupCall
 
 from anony import (app, config, db, lang, logger,
                    queue, thumb, userbot, yt)
@@ -79,52 +80,57 @@ class TgCall(PyTgCalls):
                 stream=stream,
                 config=types.GroupCallConfig(auto_start=False),
             )
-            if not seek_time:
-                media.time = 1
-                await db.add_call(chat_id)
-                text = _lang["play_media"].format(
-                    media.url,
-                    media.title,
-                    media.duration,
-                    media.user,
-                )
-                keyboard = buttons.controls(chat_id)
+        except (GroupcallInvalid, NoActiveGroupCall):
+            return await message.edit_text(
+                "❌ **Səsli çat tapılmadı!**\n\nZəhmət olmasa qrupda səsli çatı başladın və yenidən yoxlayın."
+            )
+        except Exception as e:
+            return await message.edit_text(f"❌ **Səsli çata qoşulma xətası:** {e}")
+
+        # x
+        if not seek_time:
+            media.time = 1
+            await db.add_call(chat_id)
+            text = _lang["play_media"].format(
+                media.url,
+                media.title,
+                media.duration,
+                media.user,
+            )
+            keyboard = buttons.controls(chat_id)
+            try:
+                if _thumb:
+                    await message.edit_media(
+                        media=InputMediaPhoto(
+                            media=_thumb,
+                            caption=text,
+                        ),
+                        reply_markup=keyboard,
+                    )
+                else:
+                    await message.edit_text(text, reply_markup=keyboard)
+            except FloodWait as e:
+                await asyncio.sleep(e.value + 1)
+            except (ChatSendMediaForbidden, ChatSendPhotosForbidden, MessageIdInvalid):
                 try:
                     if _thumb:
-                        await message.edit_media(
-                            media=InputMediaPhoto(
-                                media=_thumb,
-                                caption=text,
-                            ),
+                        sent = await app.send_photo(
+                            chat_id=chat_id,
+                            photo=_thumb,
+                            caption=text,
                             reply_markup=keyboard,
                         )
                     else:
-                        await message.edit_text(text, reply_markup=keyboard)
-                # T
-                except FloodWait as e:
-                    await asyncio.sleep(e.value + 1)
-                # D
-                except (ChatSendMediaForbidden, ChatSendPhotosForbidden, MessageIdInvalid):
-                    try:
-                        if _thumb:
-                            sent = await app.send_photo(
-                                chat_id=chat_id,
-                                photo=_thumb,
-                                caption=text,
-                                reply_markup=keyboard,
-                            )
-                        else:
-                            sent = await app.send_message(
-                                chat_id=chat_id,
-                                text=text,
-                                reply_markup=keyboard,
-                            )
-                        media.message_id = sent.id
-                    except Exception:
-                        pass
-                # Əlavə: Edit zamanı başqa naməlum xəta olsa bot donmasın
+                        sent = await app.send_message(
+                            chat_id=chat_id,
+                            text=text,
+                            reply_markup=keyboard,
+                        )
+                    media.message_id = sent.id
                 except Exception:
                     pass
+            except Exception:
+                pass
                   
         except FileNotFoundError:
             await message.edit_text(_lang["error_no_file"].format(config.SUPPORT_CHAT))
