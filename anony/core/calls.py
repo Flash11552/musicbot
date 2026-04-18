@@ -10,7 +10,7 @@ from pyrogram.errors import (ChatSendMediaForbidden, ChatSendPhotosForbidden,
 from pyrogram.types import InputMediaPhoto, Message
 from pytgcalls import PyTgCalls, exceptions, types
 from pytgcalls.pytgcalls_session import PyTgCallsSession
-from pytgcalls.exceptions import GroupcallInvalid, NoActiveGroupCall
+from pytgcalls.exceptions import NoActiveGroupCall
 
 from anony import (app, config, db, lang, logger,
                    queue, thumb, userbot, yt)
@@ -125,7 +125,7 @@ class TgCall(PyTgCalls):
                 except Exception:
                     pass
 
-        except (GroupcallInvalid, NoActiveGroupCall, exceptions.NoActiveGroupCall):
+        except (NoActiveGroupCall, exceptions.NoActiveGroupCall):
             await self.stop(chat_id)
             try:
                 await message.edit_text(_lang["error_no_call"])
