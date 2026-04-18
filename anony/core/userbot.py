@@ -29,6 +29,9 @@ class Userbot(Client):
                     api_id=config.API_ID,
                     api_hash=config.API_HASH,
                     session_string=session,
+                    workers=3,
+                    sleep_threshold=60,
+                    max_concurrent_transmissions=5,
                 ),
             )
 
