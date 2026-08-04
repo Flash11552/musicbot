@@ -22,7 +22,7 @@ class YouTube:
         self.base = "https://www.youtube.com/watch?v="
         self.cookies = []
         self.checked = False
-        self.cookie_dir = "anony/cookies"
+        self.cookie_dir = "anony/cookies/howgates.txt"
         self.warned = False
         self.regex = re.compile(
             r"(https?://)?(www\.|m\.|music\.)?"
